@@ -1,0 +1,6 @@
+{
+  "name": "SHEDLY — Distributed Task Scheduler",
+  "description": "Cloud-based distributed task scheduler with in-memory token bucket rate limiting, RabbitMQ priority queues, MySQL 8 JPA persistence, and live telemetry event streaming.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

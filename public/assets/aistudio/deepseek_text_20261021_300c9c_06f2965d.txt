@@ -1,0 +1,40 @@
+┌────────────────────────────────────────────────────────────────────────┐
+│                REACT FRONTEND (Vite, http://localhost:5173)            │
+│                                                                        │
+│   ┌────────────────────┐ ┌────────────────────┐ ┌────────────────────┐ │
+│   │ Top Bar            │ │ Main Tabs          │ │ Live Events Panel  │ │
+│   │ • Tokens X/5       │ │ • Create Task      │ │ (newest on top,    │ │
+│   │ • Queue depth      │ │ • Task List        │ │  color-coded,      │ │
+│   │ • Scheduler status │ │ • Dashboard        │ │  auto-scrolls)     │ │
+│   └────────┬───────────┘ └─────────┬──────────┘ └─────────▲──────────┘ │
+└────────────┼───────────────────────┼──────────────────────┼────────────┘
+             │ 1s polling (4 endpoints)                     │
+             ▼                                               │
+┌────────────────────────────────────────────────────────────┴───────────┐
+│           SPRING BOOT 3.2 BACKEND (Java 17, http://localhost:8080)     │
+│                                                                        │
+│  ┌──────────────────────┐   ┌────────────────────────────────────────┐ │
+│  │ TokenBucketService   │   │ EventService                           │ │
+│  │ capacity=5, refill=12s│   │ bounded deque, max 200                 │ │
+│  │ in-memory Map        │   │ GET /api/events?since=<id>             │ │
+│  └──────────┬───────────┘   └────────────────▲───────────────────────┘ │
+│             │ checks                          │ pushes events          │
+│             ▼                                 │                        │
+│  ┌────────────────────────┐   ┌───────────────┴────────────────────┐   │
+│  │ TaskController         │   │ SchedulerService (@Scheduled 5s)   │   │
+│  │ • POST /api/tasks      │   │ WorkerService (@RabbitListener,    │   │
+│  │   (checks token bucket)│   │   3-thread pool, sleeps 2-3s)      │   │
+│  │ • GET /api/tasks       │   │ StatsService (/api/stats)          │   │
+│  │ • GET /api/tasks/{id}  │   └───────────────┬────────────────────┘   │
+│  │ • DELETE /api/tasks/{id}│                  │                        │
+│  │ • GET rate-limit-status│                   │                        │
+│  └────────────┬───────────┘                   │                        │
+│               │                               │                        │
+└───────────────┼───────────────────────────────┼────────────────────────┘
+                │                               │
+                ▼                               ▼
+         ┌────────────┐                  ┌──────────────────────────────┐
+         │  MySQL 8   │                  │  RabbitMQ                    │
+         │  scheduler │                  │  queue: task.queue           │
+         │  tasks tbl │                  │  x-max-priority=10           │
+         └────────────┘                  └──────────────────────────────┘
